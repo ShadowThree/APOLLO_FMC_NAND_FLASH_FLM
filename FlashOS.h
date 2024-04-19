@@ -41,6 +41,8 @@
 #define SECTOR_NUM 512         // Max Number of Sector Items
 #define PAGE_MAX   65536       // Max Page Size for Programming
 
+#define DEV_ADDR	(0x80000000)
+
 struct FlashSectors  {
   unsigned long   szSector;    // Sector Size in Bytes
   unsigned long AddrSector;    // Address of Sector
