@@ -12,7 +12,7 @@
 #include "STM32H7FMC.h"
 #include "stm32h7xxfmc.h"
 
-#define DEV_ADDR	(0x80000000)
+#define DEV_ADDR	((unsigned long)0x80000000)
 #define PAGE_SIZE		(2048)
 #define BLOCK_SIZE	(PAGE_SIZE * 64)
 
@@ -75,8 +75,7 @@ int EraseSector (unsigned long adr)
 	}
 	
 	adr -= DEV_ADDR;
-	//NAND_AddressTypeDef nand_addr = {.Page = 0, .Block = adr / BLOCK_SIZE, .Plane = 0};
-	NAND_AddressTypeDef nand_addr = {.Page = 0, .Block = 0, .Plane = 0};
+	NAND_AddressTypeDef nand_addr = {.Page = 0, .Block = adr / BLOCK_SIZE, .Plane = 0};
 	if(HAL_OK != HAL_NAND_Erase_Block(&hnand1, &nand_addr)) {
 		return 1;
 	}
@@ -102,8 +101,7 @@ int ProgramPage (unsigned long adr, unsigned long sz, unsigned char *buf)
 	}
 	
 	adr -= DEV_ADDR;
-	//NAND_AddressTypeDef nand_addr = {.Page = adr % BLOCK_SIZE / PAGE_SIZE, .Block = adr / BLOCK_SIZE, .Plane = 0};
-	NAND_AddressTypeDef nand_addr = {.Page = 0, .Block = 0, .Plane = 0};
+	NAND_AddressTypeDef nand_addr = {.Page = adr % BLOCK_SIZE / PAGE_SIZE, .Block = adr / BLOCK_SIZE, .Plane = 0};
 	if(HAL_OK != HAL_NAND_Write_Page_8b(&hnand1, &nand_addr, buf, 1)) {
 		return 1;
 	}
@@ -116,19 +114,24 @@ int ProgramPage (unsigned long adr, unsigned long sz, unsigned char *buf)
 unsigned long Verify (unsigned long adr, unsigned long sz, unsigned char *buf){
 	
 	int result = 0;
+	static uint8_t read_buf[PAGE_SIZE] = {0};
 	
 	result = Init_fmc();
 	if (result !=0)
 		return 1;
 	
-	return adr + sz;
+	adr -= DEV_ADDR;
+	NAND_AddressTypeDef nand_addr = {.Page = adr % BLOCK_SIZE / PAGE_SIZE, .Block = adr / BLOCK_SIZE, .Plane = 0};
+	if(HAL_OK != HAL_NAND_Read_Page_8b(&hnand1, &nand_addr, read_buf, 1)) {
+		return 2;
+	}
 	
-//	while (sz-->0)
-//	{
-//		if ( *(char*)adr++ != *((char*)buf++))
-//			return (adr);//  *(u32*)0x90000504;//(adr);//  
-//	}
-		
-  return adr;
+	for(uint16_t i = 0; i < PAGE_SIZE; i++) {
+		if(read_buf[i] != buf[i]) {
+			return adr + i + DEV_ADDR;
+		}
+	}
+	
+	return adr + sz + DEV_ADDR;
 }
 #endif

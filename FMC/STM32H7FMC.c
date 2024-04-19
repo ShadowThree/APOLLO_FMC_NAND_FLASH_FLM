@@ -77,10 +77,10 @@ int Init_fmc (void)
     return 1;
 	}
 	
-	result = HAL_NAND_Reset(&hnand1);
-	if (result) {
-    return 1;
-	}
+//	result = HAL_NAND_Reset(&hnand1);
+//	if (result) {
+//    return 1;
+//	}
 	
 //	NAND_IDTypeDef nand_id = {0};
 //	result = HAL_NAND_Read_ID(&hnand1, &nand_id);
