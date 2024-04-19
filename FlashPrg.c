@@ -117,8 +117,9 @@ unsigned long Verify (unsigned long adr, unsigned long sz, unsigned char *buf){
 	static uint8_t read_buf[PAGE_SIZE] = {0};
 	
 	result = Init_fmc();
-	if (result !=0)
+	if (result != 0) {
 		return 1;
+	}
 	
 	adr -= DEV_ADDR;
 	NAND_AddressTypeDef nand_addr = {.Page = adr % BLOCK_SIZE / PAGE_SIZE, .Block = adr / BLOCK_SIZE, .Plane = 0};
@@ -128,10 +129,10 @@ unsigned long Verify (unsigned long adr, unsigned long sz, unsigned char *buf){
 	
 	for(uint16_t i = 0; i < PAGE_SIZE; i++) {
 		if(read_buf[i] != buf[i]) {
-			return adr + i + DEV_ADDR;
+			return (adr + i + DEV_ADDR);
 		}
 	}
 	
-	return adr + sz + DEV_ADDR;
+	return (adr + sz + DEV_ADDR);
 }
 #endif
