@@ -5,6 +5,36 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 	return HAL_OK;
 }
 
+uint32_t HAL_GetTick (void) { 
+  static uint32_t ticks = 0U; 
+         uint32_t i; 
+ 
+  /* If Kernel is not running wait approximately 1 ms then increment  
+     and return auxiliary tick counter value */ 
+  for (i = (SystemCoreClock >> 14U); i > 0U; i--) { 
+    __NOP(); __NOP(); __NOP(); __NOP(); __NOP(); __NOP(); 
+    __NOP(); __NOP(); __NOP(); __NOP(); __NOP(); __NOP(); 
+  } 
+  return ++ticks; 
+}
+
+void HAL_Delay(uint32_t Delay) 
+{ 
+  uint32_t tickstart = HAL_GetTick(); 
+  uint32_t wait = Delay; 
+ 
+  /* Add a period to guaranty minimum wait */ 
+  if (wait < HAL_MAX_DELAY) 
+  { 
+    wait += (uint32_t)(1U); 
+  } 
+ 
+  while((HAL_GetTick() - tickstart) < wait) 
+  { 
+    __NOP(); 
+  } 
+}
+
 
 void MX_GPIO_Init(void)
 {
