@@ -117,11 +117,11 @@ unsigned long Verify (unsigned long adr, unsigned long sz, unsigned char *buf){
 	
 	int result = 0;
 	
-	return adr + sz;
-	
 	result = Init_fmc();
 	if (result !=0)
 		return 1;
+	
+	return adr + sz;
 	
 //	while (sz-->0)
 //	{

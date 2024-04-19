@@ -43,9 +43,27 @@ int Init_fmc (void)
 	MX_GPIO_Init();
   //result = NOR_Init();
 	result = NAND_Init();
+  if (result) {
+    return 1;
+	}
 	
-  if (result == 1)
-    return result;
+	result = HAL_NAND_Reset(&hnand1);
+	if (result) {
+    return 1;
+	}
+	
+//	NAND_IDTypeDef nand_id = {0};
+//	result = HAL_NAND_Read_ID(&hnand1, &nand_id);
+//	if(result) {
+//		return 1;
+//	}
+	
+	// read ID (0xADF1001D for H27U1G8F2BTR)    // 0xADDC9095 for H27U4G8F2ETR
+//	if(((nand_id.Maker_Id != 0xAD) || (nand_id.Device_Id != 0xF1) || (nand_id.Third_Id != 0x00) || (nand_id.Fourth_Id != 0x1D)) &&
+//		 ((nand_id.Maker_Id != 0xAD) || (nand_id.Device_Id != 0xDC) || (nand_id.Third_Id != 0x90) || (nand_id.Fourth_Id != 0x95))) {
+//			 return 1;
+//		 }
+		 
   return 0;  
 }
 
