@@ -12,7 +12,7 @@
 #include "STM32H7FMC.h"
 #include "stm32h7xxfmc.h"
 
-#define DEV_ADDR	((unsigned long)0x80000000)
+#define DEV_ADDR	((unsigned long)0xC0400000)
 #define PAGE_SIZE		(2048)
 #define BLOCK_SIZE	(PAGE_SIZE * 64)
 

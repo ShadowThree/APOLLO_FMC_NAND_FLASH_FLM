@@ -14,7 +14,7 @@ struct FlashDevice const FlashDevice  =  {
    FLASH_DRV_VERS,             // Driver Version, do not modify!
    "APOLLO_NAND_FLASH",          // Device Name 
    EXT8BIT,                     // Device Type
-   0x80000000,                 // Device Start Address
+   0xC0400000,                 // Device Start Address
    0x20000000,                 // Device Size in Bytes (512MB)
    2048,                       // Programming Page Size
    0x00,                          // Reserved, must be 0
