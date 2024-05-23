@@ -15,123 +15,105 @@
 #define PAGE_SIZE		(2048)
 #define BLOCK_SIZE	(PAGE_SIZE * 64)
 
-/*
- *  Initialize Flash Programming Functions
- *    Parameter:      adr:  Device Base Address
- *                    clk:  Clock Frequency (Hz)
- *                    fnc:  Function Code (1 - Erase, 2 - Program, 3 - Verify)
- *    Return Value:   0 - OK,  1 - Failed
- */
-
-#if defined FLASH_MEM || defined FLASH_OTP
-int Init (unsigned long adr, unsigned long clk, unsigned long fnc) {
-
+int Init(unsigned long adr, unsigned long clk, unsigned long fnc)
+{
   return (Init_fmc());
 }
-#endif
 
-
-/*
- *  De-Initialize Flash Programming Functions
- *    Parameter:      fnc:  Function Code (1 - Erase, 2 - Program, 3 - Verify)
- *    Return Value:   0 - OK,  1 - Failed
- */
-
-#if defined FLASH_MEM || defined FLASH_OTP
-int UnInit (unsigned long fnc) {
-
-
+int UnInit(unsigned long fnc)
+{
+	HAL_NAND_DeInit(&hnand1);
   return (0);
 }
-#endif
 
-
-/*
- *  Erase complete Flash Memory
- *    Return Value:   0 - OK,  1 - Failed
- */
-
-#ifdef FLASH_MEM
-int EraseChip (void) {
-	
-	return 0;
-  //return (chip_Erase());                                           // Done
-}
-#endif
-
-
-/*
- *  Erase Sector in Flash Memory
- *    Parameter:      adr:  Sector Address
- *    Return Value:   0 - OK,  1 - Failed
- */
-
-#ifdef FLASH_MEM
-int EraseSector (unsigned long adr)
+int EraseSector(unsigned long adr)
 {
-	if(adr != DEV_ADDR) {
-		return 1;
-	}
-	
 	adr -= DEV_ADDR;
 	NAND_AddressTypeDef nand_addr = {.Page = 0, .Block = adr / BLOCK_SIZE, .Plane = 0};
 	if(HAL_OK != HAL_NAND_Erase_Block(&hnand1, &nand_addr)) {
 		return 1;
 	}
 	return 0;
-  //return (SectorErase_fmc ( adr , adr + 0x2000));                                           // Done
 }
-#endif
 
-
-/*
- *  Program Page in Flash Memory
- *    Parameter:      adr:  Page Start Address
- *                    sz:   Page Size
- *                    buf:  Page Data
- *    Return Value:   0 - OK,  1 - Failed
- */
-
-#if defined FLASH_MEM || defined FLASH_OTP
-int ProgramPage (unsigned long adr, unsigned long sz, unsigned char *buf)
+int ProgramPage(unsigned long adr, unsigned long sz, unsigned char *buf)
 {
-	if(adr != DEV_ADDR) {
-		return 1;
-	}
-	
 	adr -= DEV_ADDR;
 	NAND_AddressTypeDef nand_addr = {.Page = adr % BLOCK_SIZE / PAGE_SIZE, .Block = adr / BLOCK_SIZE, .Plane = 0};
 	if(HAL_OK != HAL_NAND_Write_Page_8b(&hnand1, &nand_addr, buf, 1)) {
 		return 1;
 	}
+	
+//	uint8_t read_buf[PAGE_SIZE] = {0};
+//	if(HAL_OK != HAL_NAND_Read_Page_8b(&hnand1, &nand_addr, read_buf, 1)) {
+//		return 1;
+//	}
+//	for(uint16_t i = 0; i < PAGE_SIZE; i++) {
+//		if(buf[i] != read_buf[i]) {
+//			return 1;
+//		}
+//	}
+	
 	return 0;
-  //return (Write_fmc ( adr,  sz, (unsigned short *) buf));                                           // Done
 }
 
-
-
-unsigned long Verify (unsigned long adr, unsigned long sz, unsigned char *buf){
+unsigned long Verify(unsigned long adr, unsigned long sz, unsigned char *buf)
+{
+	uint8_t read_buf[PAGE_SIZE] = {0};
 	
-	int result = 0;
-	static uint8_t read_buf[PAGE_SIZE] = {0};
-	
-	result = Init_fmc();
-	if (result != 0) {
-		return 1;
-	}
+//	HAL_NAND_DeInit(&hnand1);
+//	if(Init_fmc()) {
+//		while(1);
+//	}
+//	HAL_NAND_Reset(&hnand1);
 	
 	adr -= DEV_ADDR;
 	NAND_AddressTypeDef nand_addr = {.Page = adr % BLOCK_SIZE / PAGE_SIZE, .Block = adr / BLOCK_SIZE, .Plane = 0};
 	if(HAL_OK != HAL_NAND_Read_Page_8b(&hnand1, &nand_addr, read_buf, 1)) {
-		return 2;
+		return 0;
 	}
+	
+//	read_buf[0] = 0x00;
+//	read_buf[1] = 0x01;
 	
 	for(uint16_t i = 0; i < PAGE_SIZE; i++) {
 		if(read_buf[i] != buf[i]) {
 			return (adr + i + DEV_ADDR);
 		}
 	}
-	
 	return (adr + sz + DEV_ADDR);
 }
-#endif
+
+/**
+	@Parameters
+		adr	Block start address
+		sz	Block size in bytes
+		pat	Pattern to compare
+	@Returns
+		status information:
+			0 when the block content is equal to the pattern pat.
+			1 when the block content differs from the pattern pat.
+	
+	@brief
+		The function BlankCheck can be used to check whether the specified block is empty, or whether the content is equal to a specific pattern defined in the argument pat.
+		The argument adr specifies the start address of the block that is to be verified.
+		The argument sz specifies the size of the block that is to be verified.
+ */
+int BlankCheck(unsigned long adr, unsigned long sz, unsigned char pat)
+{
+	uint8_t read_buf[PAGE_SIZE] = {0};
+	adr -= DEV_ADDR;
+	NAND_AddressTypeDef nand_addr = {.Page = 0, .Block = adr / BLOCK_SIZE, .Plane = 0};
+	for(uint16_t i = 0; i < BLOCK_SIZE / PAGE_SIZE; i++) {
+		nand_addr.Page = i;
+		if(HAL_OK != HAL_NAND_Read_Page_8b(&hnand1, &nand_addr, read_buf, 1)) {
+			return 1;
+		}
+		for(uint16_t j = 0; j < PAGE_SIZE; j++) {
+			if(read_buf[j] != pat) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
